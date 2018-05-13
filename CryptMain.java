@@ -12,6 +12,9 @@ import java.io.FileOutputStream;
 import java.io.*;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
+
 
 /*
  * This sample code was written by Aaron M. Renn and is a demonstration
@@ -332,11 +335,18 @@ public class CryptMain
 					System.out.println("length=" + length);
 
 					byte[] bytes = ByteBuffer.allocate(4).putInt(length).array();
-					out.write(bytes[3]);
-					out.write(bytes[2]);
-					out.write(bytes[1]);
-					out.write(bytes[0]);
 
+					if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN)
+					{
+						out.write(bytes);
+					}
+					else
+					{
+						out.write(bytes[3]);
+						out.write(bytes[2]);
+						out.write(bytes[1]);
+						out.write(bytes[0]);
+					}
 					out.write(cipherbytes);
 				}
 				catch (Exception e)
@@ -411,10 +421,14 @@ public class CryptMain
 			b[2] = filecontent[(int)Offset+2];
 			b[3] = filecontent[(int)Offset+3];
 
-			//little
-			BlockLength = (((b[3] & 0xff) << 24) | ((b[2] & 0xff) << 16) | ((b[1] & 0xff) << 8) | (b[0] & 0xff));
-			//big
-			//BlockLength = (((b[0] & 0xff) << 24) | ((b[1] & 0xff) << 16) | ((b[2] & 0xff) << 8) | (b[3] & 0xff));
+			if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN)
+			{
+				BlockLength = (((b[0] & 0xff) << 24) | ((b[1] & 0xff) << 16) | ((b[2] & 0xff) << 8) | (b[3] & 0xff));
+			}
+			else
+			{
+				BlockLength = (((b[3] & 0xff) << 24) | ((b[2] & 0xff) << 16) | ((b[1] & 0xff) << 8) | (b[0] & 0xff));
+			}
 			System.out.println("BlockLength=" + BlockLength);
 			Offset += WordSize;
 			byte[] Data = new byte[(int)BlockLength];
