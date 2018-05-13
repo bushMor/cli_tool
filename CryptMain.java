@@ -11,6 +11,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.*;
 
+import java.nio.ByteBuffer;
+
 /*
  * This sample code was written by Aaron M. Renn and is a demonstration
  * of how to utilize some of the features of the GNU getopt package.  This
@@ -57,15 +59,19 @@ public class CryptMain
 		int method = 0;
 		String plainText = "";
 		String path = "";
+
+		int v =0, h = 0;
 		while ((c = g.getopt()) != -1)
 		switch (c)
 		{
 			case 'h':
 				System.out.println(usage);
+				h = 1;
 			break;
 
 			case 'v':
 				System.out.println(version);
+				v = 1;
 			break;
 
 			case 's':
@@ -194,7 +200,10 @@ public class CryptMain
 		//System.out.println("work=" + work +", optind="+ optind + ", argc=" + argc);
 		if (0 == work || optind < argc || (1 == work && argc < 3) || (1<work && argc < 2))
 		{
-			System.out.println(usage);
+			if (0==v && 0==h)
+			{
+				System.out.println(usage);
+			}
 			return;
 		}
 
@@ -310,21 +319,24 @@ public class CryptMain
 			while ((tempString = reader.readLine()) != null)
 			{
 				//System.out.println( "tempString=" + tempString);
-				String line = new String(tempString);
+				String line = tempString + '\n';
 				length = line.length();
-				newlength = (length / 8 + 1) * 8;
-				padSize = newlength - length;
-				line = padRight(line, newlength, (char)padSize);
-				final byte[] cipherbytes;
+				//newlength = (length / 8 + 1) * 8;
+				//padSize = newlength - length;
+				//line = padRight(line, newlength, (char)padSize);
+				System.out.println("newlength=" + newlength + ", length=" + length + ", line=" + line);
 				try
 				{
-					cipherbytes = TripleDES.encrypt(line);
+					final byte[] cipherbytes = TripleDES.encrypt(line);
 					length = cipherbytes.length;
-					//System.out.println("length=" + length);
+					System.out.println("length=" + length);
 
-					byte[] intBytes = intToByteArray( length );
-					//Array.Reverse(intBytes);
-					out.write(intBytes);
+					byte[] bytes = ByteBuffer.allocate(4).putInt(length).array();
+					out.write(bytes[3]);
+					out.write(bytes[2]);
+					out.write(bytes[1]);
+					out.write(bytes[0]);
+
 					out.write(cipherbytes);
 				}
 				catch (Exception e)
@@ -398,8 +410,12 @@ public class CryptMain
 			b[1] = filecontent[(int)Offset+1];
 			b[2] = filecontent[(int)Offset+2];
 			b[3] = filecontent[(int)Offset+3];
-			BlockLength = ByteArrayToInt(b);
-			//System.out.println("BlockLength=" + BlockLength);
+
+			//little
+			BlockLength = (((b[3] & 0xff) << 24) | ((b[2] & 0xff) << 16) | ((b[1] & 0xff) << 8) | (b[0] & 0xff));
+			//big
+			//BlockLength = (((b[0] & 0xff) << 24) | ((b[1] & 0xff) << 16) | ((b[2] & 0xff) << 8) | (b[3] & 0xff));
+			System.out.println("BlockLength=" + BlockLength);
 			Offset += WordSize;
 			byte[] Data = new byte[(int)BlockLength];
 			for (int i = 0; i<BlockLength; i++)
@@ -454,7 +470,6 @@ public class CryptMain
 		return filename;
 	}
 
-
 	private static String padLeft(String src, int len, char ch) {
 		int diff = len - src.length();
 		if (diff <= 0) {
@@ -462,8 +477,8 @@ public class CryptMain
 		}
 
 		char[] charr = new char[len];
-		System.arraycopy(src.toCharArray(), 0, charr, 0, src.length());
-		for (int i = src.length(); i < len; i++) {
+		System.arraycopy(src.toCharArray(), 0, charr, diff, src.length());
+		for (int i = 0; i < diff; i++) {
 			charr[i] = ch;
 		}
 		return new String(charr);
@@ -476,8 +491,8 @@ public class CryptMain
 		}
 
 		char[] charr = new char[len];
-		System.arraycopy(src.toCharArray(), 0, charr, diff, src.length());
-		for (int i = 0; i < diff; i++) {
+		System.arraycopy(src.toCharArray(), 0, charr, 0, src.length());
+		for (int i = src.length(); i < len; i++) {
 			charr[i] = ch;
 		}
 		return new String(charr);
