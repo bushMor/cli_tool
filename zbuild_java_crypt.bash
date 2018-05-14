@@ -35,7 +35,7 @@ TARGET=audiocodesCryptTool-1.0.0_${MYNAME}_${OS_DATE}.jar;
 PROJECT_PATH=${WORK_DIR};
 JAR_PATH=$PROJECT_PATH/lib;
 BUILD_PATH=$PROJECT_PATH/build;
-SRC_PATH=$PROJECT_PATH/crypt;
+SRC_PATH=$PROJECT_PATH/src;
 MANIFEST_MF=$BUILD_PATH/MANIFEST.MF;
 
 
@@ -59,7 +59,9 @@ mkdir -p $BUILD_PATH/jar/META-INF;
 
 # Second, remove the sources.list file if it exists and then create the sources.list file of the project
 rm -f $BUILD_PATH/sources.list;
-find $SRC_PATH -name *.java > $BUILD_PATH/sources.list;
+find ${SRC_PATH} -name '*.java' > $BUILD_PATH/sources.list;
+mkdir -p ${BUILD_PATH}/jar/gnu/getopt
+find ${SRC_PATH}/gnu -type f -name '*.properties' | xargs cp -t ${BUILD_PATH}/jar/gnu/getopt
 
 # unjar others libary/jar
 #cd $BUILD_PATH/jar;
@@ -69,7 +71,7 @@ cd $PROJECT_PATH;
 
 # Compile the project
 #javac -d $BUILD_PATH/jar -classpath $JAR_PATH/jargs-1.0.jar:$JAR_PATH/rhino-1.7R2.jar @$BUILD_PATH/sources.list;
-javac -d $BUILD_PATH/jar -classpath @$BUILD_PATH/sources.list;
+javac -d $BUILD_PATH/jar @$BUILD_PATH/sources.list;
 
 # Create MANIFEST.MF
 make_manifest_mf;
